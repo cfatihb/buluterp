@@ -88,6 +88,8 @@ public class LoginActivity extends BaseActivity {
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
 
+        //test
+
         versionName = BuildConfig.VERSION_NAME; //App version
         android_id = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
