@@ -1,47 +1,42 @@
 package com.mobil.bulut.Activity;
 
 import android.content.res.Configuration;
-import android.os.Build;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import android.os.Handler;
+import android.support.v4.app.FragmentTabHost;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TabHost;
 import android.widget.TextView;
 
-import com.mobil.bulut.Adapter.MainAdapter;
+import com.mobil.bulut.BaseActivity;
+import com.mobil.bulut.BaseFragment;
 import com.mobil.bulut.BuildConfig;
+import com.mobil.bulut.Fragment.FastOrderFragment;
+import com.mobil.bulut.Fragment.HomeFragment;
+import com.mobil.bulut.Fragment.OrdersFragment;
+import com.mobil.bulut.Fragment.RegionFragment;
 import com.mobil.bulut.Helpers.CacheDatas;
 import com.mobil.bulut.Helpers.CemAnimationHelper;
 import com.mobil.bulut.Helpers.NavigationHelper;
 import com.mobil.bulut.Helpers.OnSwipeListener;
-import com.mobil.bulut.Models.LoginResponse;
 import com.mobil.bulut.R;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import static com.mobil.bulut.Services.Api.service_URL_FIRMA;
-
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener  {
-
-    MainActivity mainActivity = null;
-
-    private static final int STORAGE_REQUEST_CODE = 1;
+public class MainActivity extends BaseActivity implements TabHost.OnTabChangeListener, View.OnTouchListener{
 
     @BindView(R.id.leftMenuArea)            RelativeLayout leftMenuArea;
     @BindView(R.id.mainLayout)              RelativeLayout mainLayout;
@@ -49,18 +44,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @BindView(R.id.allLayout)               RelativeLayout allLayout;
     @BindView(R.id.versionNameTxt)          TextView versionNameTxt;
 
-    @BindView(R.id.mainRecyclerView)        RecyclerView mainRecyclerView;
-
-    @BindView(R.id.bgImage)                 ImageView bgImage;
-    @BindView(R.id.toolbar)                 RelativeLayout toolbar;
-
     @BindView(R.id.menuBtn)                 ImageView menuBtn;
     @BindView(R.id.calendarBtn)             ImageView calendarBtn;
 
-    Boolean leftMenu = false;
-
+    //TabHost definition
     public static MainActivity sharedInstance;
+    public static BaseFragment tabFragments[] = null;
+    public static View tabViews[];
+    private FragmentTabHost mTabHost;
+    int lastSelectedTab = 0;
+    private int willRefreshTab = -1;
+    int fleetTabSize = 4;
+    int currentTabHost = 0;
 
+    public static MainActivity mainActivity;
+
+    Boolean leftMenu = false;
     int leftMenuSize = 0;
 
     int screenSizeWidth, screenSizeHeight;
@@ -72,22 +71,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     String versionName;
 
-    List<String> menuler = new ArrayList<String>();
-    List<String> finans = new ArrayList<String>();
-    List<String> genel = new ArrayList<String>();
-    List<String> yonetim = new ArrayList<String>();
-    List<String> sevkiyat = new ArrayList<String>();
-    List<String> hammadde = new ArrayList<String>();
-    List<String> disticaret = new ArrayList<String>();
-    List<String> laboratuList = new ArrayList<String>();
-    List<String> uretim = new ArrayList<String>();
-    List<String> prim = new ArrayList<String>();
-    List<String> diger = new ArrayList<String>();
-    List<String> yardimci = new ArrayList<String>();
-    List<String> ayarlar = new ArrayList<String>();
-
-    MainAdapter mainAdapter;
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,12 +79,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         mainActivity = MainActivity.this;
 
-        versionName = BuildConfig.VERSION_NAME; //App version
-        versionNameTxt.setText("Sürüm : "+versionName);
-
         if (sharedInstance != null)
             sharedInstance.finish();
         sharedInstance = this;
+
+        tabViews = new View[fleetTabSize];
+        tabFragments = new BaseFragment[fleetTabSize];
+
+        versionName = BuildConfig.VERSION_NAME; //App version
+        versionNameTxt.setText("Sürüm : "+versionName);
 
         changeStatusColor(ContextCompat.getColor(mainActivity, R.color.white));
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
@@ -163,42 +149,135 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
         doubleMain.setOnTouchListener(this);
 
-        mainAdapter = new MainAdapter(getApplicationContext(), menuler);
-
-        mainRecyclerView.setLayoutManager(new GridLayoutManager(this, 4));
-        mainRecyclerView.setAdapter(mainAdapter);
-
-        mainRecyclerView.setHasFixedSize(true);
-        mainRecyclerView.setItemViewCacheSize(20);
-        mainRecyclerView.setDrawingCacheEnabled(true);
-        mainRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-
-        getMenus();
+        initializeTabHost();
 
     }
+
+    private void initializeTabHost() {
+
+        mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
+        mTabHost.setup(this, getSupportFragmentManager(), android.R.id.tabcontent);
+        mTabHost.setOnTabChangedListener(this);
+
+        addTab("tab1", R.drawable.ic_cancel_icon, HomeFragment.class, 0);
+        addTab("tab2", R.drawable.ic_cancel_icon, RegionFragment.class, 1);
+        addTab("tab3", R.drawable.ic_cancel_icon, FastOrderFragment.class, 2);
+        addTab("tab4", R.drawable.ic_cancel_icon, OrdersFragment.class, 3);
+
+        mTabHost.getTabWidget().getChildAt(0).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mTabHost.setCurrentTab(0);
+            }
+        });
+
+    }
+
+    public void addTab(String tag, int resId, Class<?> fragment, int position) {
+        mTabHost.addTab(mTabHost.newTabSpec(tag).setIndicator(createTabView(resId, position)), fragment, null);
+    }
+
+    public View createTabView(int resId, int position) {
+
+        View view = LayoutInflater.from(this).inflate(R.layout.menu_tab, null);
+
+        ImageView iView = (ImageView) view.findViewById(R.id.tab_img);
+        iView.setImageResource(resId);
+
+        TextView messageCount = (TextView) view.findViewById(R.id.messageCount);
+        TextView txt = (TextView) view.findViewById(R.id.tab_txt);
+
+        switch (position) {
+            case 0:
+                txt.setText("A1");
+                break;
+            case 1:
+                txt.setText("A1");
+                break;
+            case 2:
+                txt.setText("A1");
+                break;
+            case 3:
+                txt.setText("A1");
+                break;
+        }
+
+        txt.setVisibility(View.GONE);
+
+        tabViews[position] = view;
+        return view;
+    }
+
 
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        gestureDetector.onTouchEvent(event);
-        return true;
-    }
+    protected void onResume() {
+        super.onResume();
 
-    public void changeStatusColor(int color){
-        if (Build.VERSION.SDK_INT >= 21) {
-            getWindow().setStatusBarColor(color);
+        if (mTabHost.getCurrentTab() == fleetTabSize) {
+            mTabHost.setCurrentTab(lastSelectedTab);
+        }
+
+        if (willRefreshTab >= 0) {
+            mTabHost.setCurrentTab(willRefreshTab);
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    tabFragments[willRefreshTab].refresh();
+                    willRefreshTab = -1;
+                }
+            }, 1000);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    public void onTabChanged(String tabId) {
 
-        if (requestCode == STORAGE_REQUEST_CODE) {
+        int currentTabIndex = mTabHost.getCurrentTab();
+        currentTabHost = currentTabIndex;
 
-            int granted = android.content.pm.PackageManager.PERMISSION_GRANTED;
-            if (grantResults[0] == granted) {
+        for (int i = 0; i < fleetTabSize; i++) {
+            if (tabViews[i] != null) {
+
+                ImageView img = (ImageView) tabViews[i].findViewById(R.id.tab_img);
+                TextView txtV = (TextView) tabViews[i].findViewById(R.id.tab_txt);
+
+                int passiveColor = Color.parseColor("#bfbfbf");
+                txtV.setTextColor(passiveColor);
+                txtV.setTypeface(null, Typeface.NORMAL);
+
+                switch (i) {
+                    case 0:
+                        img.setImageResource(R.drawable.ic_cancel_icon);
+                        break;
+                    case 1:
+                        img.setImageResource(R.drawable.ic_cancel_icon);
+                        break;
+                    case 2:
+                        img.setImageResource(R.drawable.ic_cancel_icon);
+                        break;
+                    case 3:
+                        img.setImageResource(R.drawable.ic_cancel_icon);
+                        break;
+                }
+
             }
         }
+
+        lastSelectedTab = currentTabIndex;
+        ImageView img = (ImageView) tabViews[currentTabIndex].findViewById(R.id.tab_img);
+        TextView txtV = (TextView) tabViews[currentTabIndex].findViewById(R.id.tab_txt);
+
+        int activeColor = Color.parseColor("#7159f9");
+        txtV.setTextColor(activeColor);
+
+        txtV.setTextColor(activeColor);
+        txtV.setTypeface(null, Typeface.NORMAL);
+
+        TextView messageCount = (TextView) tabViews[currentTabIndex].findViewById(R.id.messageCount);
+        messageCount.setVisibility(View.GONE);
+
+      //  toolbarIcon(currentTabIndex);
     }
 
     public void scrollView(){
@@ -218,15 +297,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        Log.v("onResume", "onResumeStart");
+    public boolean onTouch(View v, MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
+        return true;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
     }
+
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -242,7 +322,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             mainLayout.getLayoutParams().height = screenSizeHeight;
 
             Log.d("tag", "Portrait");
-            mainRecyclerView.setLayoutManager(new GridLayoutManager(this, 4));
 
         } else if (orientation == Configuration.ORIENTATION_LANDSCAPE){
 
@@ -250,30 +329,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             mainLayout.getLayoutParams().height = screenSizeWidth;
 
             Log.d("tag", "Landscape");
-            mainRecyclerView.setLayoutManager(new GridLayoutManager(this, 8));
 
         } else
             Log.w("tag", "other: " + orientation);
-
-    }
-
-    public void getMenus(){
-
-        LoginResponse loginResponse = CacheDatas.loginResponse;
-
-        menuler.addAll(Arrays.asList(loginResponse.getMenuler().getAnaMenu().split(",")));
-        finans.addAll(Arrays.asList(loginResponse.getMenuler().getFinans().split(",")));
-
-        mainAdapter.notifyDataSetChanged();
-
-        String userId = loginResponse.getKullaniciDetay().getUserID();
-        String uuId = CacheDatas.uuid;
-
-        String url = service_URL_FIRMA+userId+"&uuid="+uuId;
-        Log.v("firmaUrl", url);
-
-        String a1 = "http://www.bulut-erp.com:7171/Firmalar/Firmalar?userid=2&uuid=123";
-        String a2 = "http://www.bulut-erp.com:7171/CariTip/CariTip?yillarid=12&yil=2019&firmakod=216&userid=2&uuid=123";
 
     }
 
@@ -289,18 +347,31 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @OnClick(R.id.homeBtn)
     public void homeBtnClick(){
+
+        mTabHost.setCurrentTab(0);
+        scrollView();
+
     }
 
     @OnClick(R.id.regionBtn)
     public void regionBtnClick(){
+
+        mTabHost.setCurrentTab(1);
+        scrollView();
     }
 
     @OnClick(R.id.fastOrderBtn)
     public void fastOrderBtnClick(){
+
+        mTabHost.setCurrentTab(2);
+        scrollView();
     }
 
     @OnClick(R.id.ordersBtn)
     public void ordersBtnClick(){
+
+        mTabHost.setCurrentTab(3);
+        scrollView();
     }
 
     @OnClick(R.id.themeBtn)
@@ -314,5 +385,4 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         CacheDatas.clearAll();
         finish();
     }
-
 }

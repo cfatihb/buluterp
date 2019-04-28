@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <RelativeLayout
+        android:id="@+id/allLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:id="@+id/doubleMain"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:id="@+id/leftMenuArea"
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="-50dp"
+                android:background="@color/colorPrimary">
+
+                <include
+                    layout="@layout/left_menu"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/mainLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/bgImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:adjustViewBounds="true"
+                    android:scaleType="centerCrop"
+                    android:src="@mipmap/bg9" />
+
+                <RelativeLayout
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@color/white">
+
+                    <include
+                        layout="@layout/toolbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                </RelativeLayout>
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/mainRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_below="@+id/toolbar"
+                    android:visibility="gone"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="10dp"
+                    android:isScrollContainer="false"
+                    android:nestedScrollingEnabled="false" />
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+    </RelativeLayout>
+</RelativeLayout>

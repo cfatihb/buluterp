@@ -10,13 +10,13 @@ public class NavigationHelper {
 
     public static NavigationHelper shared = new NavigationHelper();
 
-    public void MainActivity(Activity activity) {
-        Intent myIntent = new Intent(activity, MainActivity.class);
+    public void LoginActivity(Activity activity) {
+        Intent myIntent = new Intent(activity, LoginActivity.class);
         activity.startActivity(myIntent);
     }
 
-    public void LoginActivity(Activity activity) {
-        Intent myIntent = new Intent(activity, LoginActivity.class);
+    public void MainActivity(Activity activity) {
+        Intent myIntent = new Intent(activity, MainActivity.class);
         activity.startActivity(myIntent);
     }
 

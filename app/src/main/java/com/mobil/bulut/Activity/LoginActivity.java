@@ -127,6 +127,13 @@ public class LoginActivity extends BaseActivity {
 
         loadData();
 
+        if(!edtPassword.getText().toString().equals("")){
+
+            String password = edtPassword.getText().toString();
+            getLoginRepsonse(selectedUserName, password, selectedUuid);
+
+        }
+
     }
 
     public void loadData(){
